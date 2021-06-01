@@ -15,11 +15,11 @@ class Account(BaseAPI):
         super(Account, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token):
+    def get_object(cls, requester):
         """
             Class method that will return an Account object.
         """
-        acct = cls(token=api_token)
+        acct = cls(requester=requester)
         acct.load()
         return acct
 

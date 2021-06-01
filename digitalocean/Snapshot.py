@@ -16,11 +16,11 @@ class Snapshot(BaseAPI):
         super(Snapshot, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, snapshot_id):
+    def get_object(cls, requester, snapshot_id):
         """
             Class method that will return a Snapshot object by ID.
         """
-        snapshot = cls(token=api_token, id=snapshot_id)
+        snapshot = cls(requester=requester, id=snapshot_id)
         snapshot.load()
         return snapshot
 

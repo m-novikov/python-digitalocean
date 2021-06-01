@@ -17,14 +17,14 @@ class Project(BaseAPI):
         super(Project,self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, project_id):
+    def get_object(cls, requester, project_id):
         """Class method that will return a Project object by ID.
         Args:
             api_token (str): token
             kwargs (str): project id or project name
         """
 
-        project = cls(token=api_token, id=project_id)
+        project = cls(requester=requester, id=project_id)
         project.load()
         return project
 

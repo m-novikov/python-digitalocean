@@ -11,7 +11,7 @@ class FloatingIP(BaseAPI):
         super(FloatingIP, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, ip):
+    def get_object(cls, requester, ip):
         """
             Class method that will return a FloatingIP object by its IP.
 
@@ -19,7 +19,7 @@ class FloatingIP(BaseAPI):
                 api_token: str - token
                 ip: str - floating ip address
         """
-        floating_ip = cls(token=api_token, ip=ip)
+        floating_ip = cls(requester=requester, ip=ip)
         floating_ip.load()
         return floating_ip
 

@@ -10,8 +10,8 @@ class Tag(BaseAPI):
 
 
     @classmethod
-    def get_object(cls, api_token, tag_name):
-        tag = cls(token=api_token, name=tag_name)
+    def get_object(cls, requester, tag_name):
+        tag = cls(requester=requester, name=tag_name)
         tag.load()
         return tag
 

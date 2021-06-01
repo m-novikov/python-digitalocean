@@ -4,7 +4,7 @@ import re
 from .Action import Action
 from .Image import Image
 from .Kernel import Kernel
-from .baseapi import BaseAPI, Error, GET, POST, DELETE
+from .baseapi import BaseAPI, Requester, Error, GET, POST, DELETE
 from .SSHKey import SSHKey
 from .Volume import Volume
 
@@ -101,20 +101,20 @@ class Droplet(BaseAPI):
         super(Droplet, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, droplet_id):
+    def get_object(cls, requester, droplet_id):
         """Class method that will return a Droplet object by ID.
 
         Args:
-            api_token (str): token
+            requester (Requester): requester object
             droplet_id (int): droplet id
         """
-        droplet = cls(token=api_token, id=droplet_id)
+        droplet = cls(requester=requester, id=droplet_id)
         droplet.load()
         return droplet
 
     @classmethod
-    def create_multiple(*args, **kwargs):
-        api = BaseAPI(token=kwargs.get("token"))
+    def create_multiple(cls, *args, **kwargs):
+        api = Requester.create(kwargs)
 
         data = {
             "names": kwargs.get("names"),
@@ -131,7 +131,7 @@ class Droplet(BaseAPI):
 
         if kwargs.get("ssh_keys"):
             data["ssh_keys"] = Droplet.__get_ssh_keys_id_or_fingerprint(
-                    kwargs["ssh_keys"], kwargs.get("token"),
+                    api, kwargs["ssh_keys"],
                     kwargs["names"][0])
 
         if kwargs.get("user_data"):
@@ -144,8 +144,7 @@ class Droplet(BaseAPI):
         if data:
             action_ids = [data["links"]["actions"][0]["id"]]
             for droplet_json in data["droplets"]:
-                droplet_json["token"] = kwargs["token"]
-                droplet = Droplet(**droplet_json)
+                droplet = Droplet(**droplet_json, requester=api)
                 droplet.action_ids = action_ids
                 droplets.append(droplet)
 
@@ -226,7 +225,7 @@ class Droplet(BaseAPI):
             return action
         else:
             action = action[u'action']
-            return_action = Action(token=self.tokens)
+            return_action = Action(requester=self._requester)
             # Loading attributes
             for attr in action.keys():
                 setattr(return_action, attr, action[attr])
@@ -482,7 +481,7 @@ class Droplet(BaseAPI):
         )
 
     @staticmethod
-    def __get_ssh_keys_id_or_fingerprint(ssh_keys, token, name):
+    def __get_ssh_keys_id_or_fingerprint(requester, ssh_keys, name):
         """
             Check and return a list of SSH key IDs or fingerprints according
             to DigitalOcean's API. This method is used to check and create a
@@ -509,8 +508,7 @@ class Droplet(BaseAPI):
                     ssh_keys_id.append(ssh_key)
 
                 else:
-                    key = SSHKey()
-                    key.token = token
+                    key = SSHKey(requester=requester)
                     results = key.load_by_pub_key(ssh_key)
 
                     if results is None:
@@ -543,8 +541,8 @@ class Droplet(BaseAPI):
         if not self.size_slug and self.size:
             self.size_slug = self.size
 
-        ssh_keys_id = Droplet.__get_ssh_keys_id_or_fingerprint(self.ssh_keys,
-                                                               self.token,
+        ssh_keys_id = Droplet.__get_ssh_keys_id_or_fingerprint(self._requester,
+                                                               self.ssh_keys,
                                                                self.name)
 
         data = {
@@ -589,8 +587,7 @@ class Droplet(BaseAPI):
 
         actions = []
         for action_dict in answer['actions']:
-            action = Action(**action_dict)
-            action.token = self.tokens
+            action = Action(**action_dict, requester=self._requester)
             action.droplet_id = self.id
             action.load()
             actions.append(action)
@@ -603,7 +600,7 @@ class Droplet(BaseAPI):
             action_id (int): id of action
         """
         return Action.get_object(
-            api_token=self.tokens,
+            requester=self._requester,
             action_id=action_id
         )
 
@@ -614,9 +611,8 @@ class Droplet(BaseAPI):
         """
         snapshots = list()
         for id in self.snapshot_ids:
-            snapshot = Image()
+            snapshot = Image(requester=self._requester)
             snapshot.id = id
-            snapshot.token = self.tokens
             snapshots.append(snapshot)
         return snapshots
 
@@ -629,8 +625,7 @@ class Droplet(BaseAPI):
         data = self.get_data("droplets/%s/kernels/" % self.id)
         while True:
             for jsond in data[u'kernels']:
-                kernel = Kernel(**jsond)
-                kernel.token = self.tokens
+                kernel = Kernel(**jsond, requester=self._requester)
                 kernels.append(kernel)
             try:
                 url = data[u'links'][u'pages'].get(u'next')
@@ -653,7 +648,7 @@ class Droplet(BaseAPI):
         self.volumes = list()
 
         for volume_id in self.volume_ids:
-            volume = Volume().get_object(self.tokens, volume_id)
+            volume = Volume.get_object(self._requester, volume_id)
             self.volumes.append(volume)
 
 

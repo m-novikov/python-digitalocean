@@ -58,11 +58,11 @@ class Certificate(BaseAPI):
         super(Certificate, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, cert_id):
+    def get_object(cls, requester, cert_id):
         """
             Class method that will return a Certificate object by its ID.
         """
-        certificate = cls(token=api_token, id=cert_id)
+        certificate = cls(requester=requester, id=cert_id)
         certificate.load()
         return certificate
 

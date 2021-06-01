@@ -12,11 +12,11 @@ class Balance(BaseAPI):
         super(Balance, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token):
+    def get_object(cls, requester):
         """
             Class method that will return an Balance object.
         """
-        acct = cls(token=api_token)
+        acct = cls(requester=requester)
         acct.load()
         return acct
 

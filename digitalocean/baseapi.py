@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import operator
 import logging
 import requests
 from . import __name__, __version__
+from typing import Optional, Dict, Any
 try:
     import urlparse
 except ImportError:
@@ -43,23 +45,17 @@ class EndPointError(Error):
     pass
 
 
-class BaseAPI(object):
-    """
-        Basic api class for
-    """
+class Requester:
+    """Requester class encapsulating api interaction"""
     tokens = []
     _last_used = 0
     end_point = "https://api.digitalocean.com/v2/"
 
-    def __init__(self, *args, **kwargs):
-        self.token = os.getenv("DIGITALOCEAN_ACCESS_TOKEN", "")
-        self.end_point = os.getenv("DIGITALOCEAN_END_POINT", "https://api.digitalocean.com/v2/")
+    def __init__(self, token: Optional[str] = None, end_point: Optional[str] = None) -> None:
+        self.token = token or os.getenv("DIGITALOCEAN_ACCESS_TOKEN", "")
+        self.end_point = end_point or os.getenv("DIGITALOCEAN_END_POINT", "https://api.digitalocean.com/v2/")
         self._log = logging.getLogger(__name__)
-
         self._session = requests.Session()
-
-        for attr in kwargs.keys():
-            setattr(self, attr, kwargs[attr])
 
         parsed_url = urlparse.urlparse(self.end_point)
         if not parsed_url.scheme or not parsed_url.netloc:
@@ -67,6 +63,15 @@ class BaseAPI(object):
 
         if not parsed_url.path:
             self.end_point += '/'
+
+    @classmethod
+    def create(cls, config: Dict[str, Any]) -> 'Session':
+        """Create requester by consuming relevant parts of the config"""
+        arg_names = ["token", "end_point"]
+        kwargs = {}
+        for arg in arg_names:
+            kwargs[arg] = config.pop(arg, None)
+        return Requester(**kwargs)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -78,7 +83,7 @@ class BaseAPI(object):
         self.__dict__ = state
         self._log = logging.getLogger(__name__)
 
-    def __perform_request(self, url, type=GET, params=None):
+    def _perform_request(self, url, type=GET, params=None):
         """
             This method will perform the real request,
             in this way we can customize only the "output" of the API call by
@@ -132,7 +137,7 @@ class BaseAPI(object):
 
         return requests_method(url, **kwargs)
 
-    def __deal_with_pagination(self, url, method, params, data):
+    def _deal_with_pagination(self, url, method, params, data):
         """
             Perform multiple calls in order to have a full list of elements
             when the API are "paginated". (content list is divided in more
@@ -146,7 +151,7 @@ class BaseAPI(object):
             for key, value in urlparse.parse_qs(query).items():
                 params[key] = value
 
-            data = self.__perform_request(url, method, params).json()
+            data = self._perform_request(url, method, params).json()
 
             # Merge the dictionaries
             for key, value in data.items():
@@ -213,7 +218,7 @@ class BaseAPI(object):
         if type is GET:
             params.setdefault("per_page", 200)
 
-        req = self.__perform_request(url, type, params)
+        req = self._perform_request(url, type, params)
         if req.status_code == 204:
             return True
 
@@ -240,9 +245,72 @@ class BaseAPI(object):
         # multiple pages,
         pages = data.get("links", {}).get("pages", {})
         if pages.get("next") and "page" not in params:
-            return self.__deal_with_pagination(url, type, params, data)
+            return self._deal_with_pagination(url, type, params, data)
         else:
             return data
+
+    def __str__(self):
+        return "<%s>" % self.__class__.__name__
+
+    def __unicode__(self):
+        return u"%s" % self.__str__()
+
+    def __repr__(self):
+        return str(self)
+
+
+class BaseAPI(object):
+    """
+        Basic api class for  
+    """
+
+    def __init__(self, *args, requester=None, **kwargs):
+        self._log = logging.getLogger(__name__)
+
+        self._requester = requester or Requester.create(kwargs)
+        for attr in kwargs.keys():
+            setattr(self, attr, kwargs[attr])
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # The logger is not pickleable due to using thread.lock
+        del state['_log']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._log = logging.getLogger(__name__)
+
+    @property
+    def end_point(self):
+        return self._requester.end_point
+
+    @property
+    def _session(self):
+        return self._requester._session
+
+    @_session.setter
+    def _session(self, value):
+        self._requester._session = value
+
+    @property
+    def token(self):
+        # use all the tokens round-robin style
+        return self._requester.token 
+
+    @token.setter
+    def token(self, token):
+        self._requester.token = token
+
+    def get_data(self, url, type=GET, params=None):
+        """
+            This method is a basic implementation of __call_api that checks
+            errors too. In case of success the method will return True or the
+            content of the response to the request.
+
+            Pagination is automatically detected and handled accordingly
+        """
+        return self._requester.get_data(url, type, params)
 
     def __str__(self):
         return "<%s>" % self.__class__.__name__

@@ -33,13 +33,13 @@ class Manager(BaseAPI):
         """
             Returns an Account object.
         """
-        return Account.get_object(api_token=self.tokens)
+        return Account.get_object(requester=self._requester)
 
     def get_balance(self):
         """
             Returns a Balance object.
         """
-        return Balance.get_object(api_token=self.token)
+        return Balance.get_object(requester=self._requester)
 
     def get_all_regions(self):
         """
@@ -48,8 +48,7 @@ class Manager(BaseAPI):
         data = self.get_data("regions/")
         regions = list()
         for jsoned in data['regions']:
-            region = Region(**jsoned)
-            region.token = self.tokens
+            region = Region(**jsoned, requester=self._requester)
             regions.append(region)
         return regions
 
@@ -67,8 +66,7 @@ class Manager(BaseAPI):
 
         droplets = list()
         for jsoned in data['droplets']:
-            droplet = Droplet(**jsoned)
-            droplet.token = self.tokens
+            droplet = Droplet(**jsoned, requester=self._requester)
 
             for net in droplet.networks['v4']:
                 if net['type'] == 'private':
@@ -99,7 +97,7 @@ class Manager(BaseAPI):
         """
             Return a Droplet by its ID.
         """
-        return Droplet.get_object(api_token=self.tokens, droplet_id=droplet_id)
+        return Droplet.get_object(requester=self._requester, droplet_id=droplet_id)
 
     def get_all_sizes(self):
         """
@@ -108,8 +106,7 @@ class Manager(BaseAPI):
         data = self.get_data("sizes/")
         sizes = list()
         for jsoned in data['sizes']:
-            size = Size(**jsoned)
-            size.token = self.tokens
+            size = Size(**jsoned, requester=self._requester)
             sizes.append(size)
         return sizes
 
@@ -125,8 +122,7 @@ class Manager(BaseAPI):
         data = self.get_data("images/", params=params)
         images = list()
         for jsoned in data['images']:
-            image = Image(**jsoned)
-            image.token = self.tokens
+            image = Image(**jsoned, requester=self._requester)
             images.append(image)
         return images
 
@@ -143,7 +139,7 @@ class Manager(BaseAPI):
             Return a Image by its ID/Slug.
         """
         return Image.get_object(
-            api_token=self.tokens,
+            requester=self._requester,
             image_id_or_slug=image_id_or_slug,
         )
 
@@ -165,7 +161,6 @@ class Manager(BaseAPI):
         images = list()
         for i in data:
             if i.public:
-                i.token = self.tokens
                 images.append(i)
         return images
 
@@ -192,8 +187,7 @@ class Manager(BaseAPI):
         data = self.get_data("domains/")
         domains = list()
         for jsoned in data['domains']:
-            domain = Domain(**jsoned)
-            domain.token = self.tokens
+            domain = Domain(**jsoned, requester=self._requester)
             domains.append(domain)
         return domains
 
@@ -201,7 +195,7 @@ class Manager(BaseAPI):
         """
             Return a Domain by its domain_name
         """
-        return Domain.get_object(api_token=self.tokens, domain_name=domain_name)
+        return Domain.get_object(requester=self._requester, domain_name=domain_name)
 
     def get_all_sshkeys(self):
         """
@@ -210,8 +204,7 @@ class Manager(BaseAPI):
         data = self.get_data("account/keys/")
         ssh_keys = list()
         for jsoned in data['ssh_keys']:
-            ssh_key = SSHKey(**jsoned)
-            ssh_key.token = self.tokens
+            ssh_key = SSHKey(**jsoned, requester=self._requester)
             ssh_keys.append(ssh_key)
         return ssh_keys
 
@@ -219,7 +212,7 @@ class Manager(BaseAPI):
         """
             Return a SSHKey object by its ID.
         """
-        return SSHKey.get_object(api_token=self.tokens, ssh_key_id=ssh_key_id)
+        return SSHKey.get_object(requester=self._requester, ssh_key_id=ssh_key_id)
 
     def get_all_tags(self):
         """
@@ -227,14 +220,14 @@ class Manager(BaseAPI):
         """
         data = self.get_data("tags")
         return [
-            Tag(token=self.token, **tag) for tag in data['tags']
+            Tag(requester=self._requester, **tag) for tag in data['tags']
         ]
 
     def get_action(self, action_id):
         """
             Return an Action object by a specific ID.
         """
-        return Action.get_object(api_token=self.tokens, action_id=action_id)
+        return Action.get_object(requester=self._requester, action_id=action_id)
 
     def get_all_floating_ips(self):
         """
@@ -243,8 +236,7 @@ class Manager(BaseAPI):
         data = self.get_data("floating_ips")
         floating_ips = list()
         for jsoned in data['floating_ips']:
-            floating_ip = FloatingIP(**jsoned)
-            floating_ip.token = self.tokens
+            floating_ip = FloatingIP(**jsoned, requester=self._requester)
             floating_ips.append(floating_ip)
         return floating_ips
 
@@ -252,7 +244,7 @@ class Manager(BaseAPI):
         """
             Returns a of FloatingIP object by its IP address.
         """
-        return FloatingIP.get_object(api_token=self.tokens, ip=ip)
+        return FloatingIP.get_object(requester=self._requester, ip=ip)
 
     def get_all_load_balancers(self):
         """
@@ -262,8 +254,7 @@ class Manager(BaseAPI):
 
         load_balancers = list()
         for jsoned in data['load_balancers']:
-            load_balancer = LoadBalancer(**jsoned)
-            load_balancer.token = self.tokens
+            load_balancer = LoadBalancer(**jsoned, requester=self._requester)
             load_balancer.health_check = HealthCheck(**jsoned['health_check'])
             load_balancer.sticky_sessions = StickySessions(**jsoned['sticky_sessions'])
             forwarding_rules = list()
@@ -280,7 +271,7 @@ class Manager(BaseAPI):
             Args:
                 id (str): Load Balancer ID
         """
-        return LoadBalancer.get_object(api_token=self.tokens, id=id)
+        return LoadBalancer.get_object(requester=self._requester, id=id)
 
     def get_certificate(self, id):
         """
@@ -289,7 +280,7 @@ class Manager(BaseAPI):
             Args:
                 id (str): Certificate ID
         """
-        return Certificate.get_object(api_token=self.tokens, cert_id=id)
+        return Certificate.get_object(requester=self._requester, cert_id=id)
 
     def get_all_certificates(self):
         """
@@ -298,8 +289,7 @@ class Manager(BaseAPI):
         data = self.get_data("certificates")
         certificates = list()
         for jsoned in data['certificates']:
-            cert = Certificate(**jsoned)
-            cert.token = self.tokens
+            cert = Certificate(**jsoned, requester=self._requester)
             certificates.append(cert)
 
         return certificates
@@ -309,7 +299,7 @@ class Manager(BaseAPI):
             Return a Snapshot by its ID.
         """
         return Snapshot.get_object(
-            api_token=self.tokens, snapshot_id=snapshot_id
+            requester=self._requester, snapshot_id=snapshot_id
         )
 
     def get_all_snapshots(self):
@@ -318,7 +308,7 @@ class Manager(BaseAPI):
         """
         data = self.get_data("snapshots/")
         return [
-            Snapshot(token=self.tokens, **snapshot)
+            Snapshot(requester=self._requester, **snapshot)
             for snapshot in data['snapshots']
         ]
 
@@ -328,7 +318,7 @@ class Manager(BaseAPI):
         """
         data = self.get_data("snapshots?resource_type=droplet")
         return [
-            Snapshot(token=self.tokens, **snapshot)
+            Snapshot(reuester=self._requester, **snapshot)
             for snapshot in data['snapshots']
         ]
 
@@ -338,7 +328,7 @@ class Manager(BaseAPI):
         """
         data = self.get_data("snapshots?resource_type=volume")
         return [
-            Snapshot(token=self.tokens, **snapshot)
+            Snapshot(requester=self._requester, **snapshot)
             for snapshot in data['snapshots']
         ]
 
@@ -353,8 +343,7 @@ class Manager(BaseAPI):
         data = self.get_data(url)
         volumes = list()
         for jsoned in data['volumes']:
-            volume = Volume(**jsoned)
-            volume.token = self.tokens
+            volume = Volume(**jsoned, requester=self._requester)
             volumes.append(volume)
         return volumes
 
@@ -362,7 +351,7 @@ class Manager(BaseAPI):
         """
             Returns a Volume object by its ID.
         """
-        return Volume.get_object(api_token=self.tokens, volume_id=volume_id)
+        return Volume.get_object(requester=self._requester, volume_id=volume_id)
 
     def get_all_projects(self):
         """
@@ -371,8 +360,7 @@ class Manager(BaseAPI):
         data = self.get_data("projects")
         projects = list()
         for jsoned in data['projects']:
-            project = Project(**jsoned)
-            project.token = self.token
+            project = Project(**jsoned, requester=self._requester)
             projects.append(project)
         return projects
 
@@ -381,7 +369,7 @@ class Manager(BaseAPI):
             Return a Project by its ID.
         """
         return Project.get_object(
-            api_token=self.token,
+            requester=self._requester,
             project_id=project_id,
         )
 
@@ -390,7 +378,7 @@ class Manager(BaseAPI):
             Return default project of the account
         """
         return Project.get_object(
-            api_token=self.token,
+            requester=self._requester,
             project_id="default",
         )
 
@@ -401,8 +389,7 @@ class Manager(BaseAPI):
         data = self.get_data("firewalls")
         firewalls = list()
         for jsoned in data['firewalls']:
-            firewall = Firewall(**jsoned)
-            firewall.token = self.tokens
+            firewall = Firewall(**jsoned, requester=self._requester)
             in_rules = list()
             for rule in jsoned['inbound_rules']:
                 in_rules.append(InboundRule(**rule))
@@ -419,7 +406,7 @@ class Manager(BaseAPI):
             Return a Firewall by its ID.
         """
         return Firewall.get_object(
-            api_token=self.tokens,
+            requester=self._requester,
             firewall_id=firewall_id,
         )
 
@@ -429,7 +416,7 @@ class Manager(BaseAPI):
              Args:
                 id (str): The VPC's ID
         """
-        return VPC.get_object(api_token=self.token, vpc_id=id)
+        return VPC.get_object(requester=self._requester, vpc_id=id)
 
     def get_all_vpcs(self):
         """
@@ -438,8 +425,7 @@ class Manager(BaseAPI):
         data = self.get_data("vpcs")
         vpcs = list()
         for jsoned in data['vpcs']:
-            vpc = VPC(**jsoned)
-            vpc.token = self.token
+            vpc = VPC(**jsoned, requester=self._requester)
             vpcs.append(vpc)
 
         return vpcs
@@ -451,8 +437,7 @@ class Manager(BaseAPI):
         data = self.get_data("projects")
         projects = list()
         for jsoned in data['projects']:
-            project = Project(**jsoned)
-            project.token = self.token
+            project = Project(**jsoned, requester=self._requester)
             projects.append(project)
         return projects
 
@@ -461,7 +446,7 @@ class Manager(BaseAPI):
             Return a Project by its ID.
         """
         return Project.get_object(
-            api_token=self.token,
+            requester=self._requester,
             project_id=project_id,
         )
 
@@ -470,7 +455,7 @@ class Manager(BaseAPI):
             Return default project of the account
         """
         return Project.get_object(
-            api_token=self.token,
+            requester=self._requester,
             project_id="default",
         )
 

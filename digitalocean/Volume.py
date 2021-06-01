@@ -19,11 +19,11 @@ class Volume(BaseAPI):
         super(Volume, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, volume_id):
+    def get_object(cls, requester, volume_id):
         """
         Class method that will return an Volume object by ID.
         """
-        volume = cls(token=api_token, id=volume_id)
+        volume = cls(requester=requester, id=volume_id)
         volume.load()
         return volume
 
@@ -188,8 +188,7 @@ class Volume(BaseAPI):
         data = self.get_data("volumes/%s/snapshots/" % self.id)
         snapshots = list()
         for jsond in data[u'snapshots']:
-            snapshot = Snapshot(**jsond)
-            snapshot.token = self.tokens
+            snapshot = Snapshot(**jsond, requester=self._requester)
             snapshots.append(snapshot)
 
         return snapshots

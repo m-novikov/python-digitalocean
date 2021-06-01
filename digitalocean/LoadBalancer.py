@@ -163,7 +163,7 @@ class LoadBalancer(BaseAPI):
         super(LoadBalancer, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, id):
+    def get_object(cls, requester, id):
         """
         Class method that will return a LoadBalancer object by its ID.
 
@@ -171,7 +171,7 @@ class LoadBalancer(BaseAPI):
             api_token (str): DigitalOcean API token
             id (str): Load Balancer ID
         """
-        load_balancer = cls(token=api_token, id=id)
+        load_balancer = cls(requester=requester, id=id)
         load_balancer.load()
         return load_balancer
 

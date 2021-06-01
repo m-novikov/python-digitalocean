@@ -41,11 +41,11 @@ class VPC(BaseAPI):
         super(VPC, self).__init__(*args, **kwargs)
 
     @classmethod
-    def get_object(cls, api_token, vpc_id):
+    def get_object(cls, requester, vpc_id):
         """
             Class method that will return a VPC object by its ID.
         """
-        vpc = cls(token=api_token, id=vpc_id)
+        vpc = cls(requester=requester, id=vpc_id)
         vpc.load()
         return vpc
 
